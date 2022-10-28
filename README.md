@@ -17,3 +17,8 @@ message type M means msgpack content
 message type P means ping, which must be answered with R for pong response
 message type E means error
 message type C means close
+
+
+
+
+handshake is message type H and must be sent as first message
