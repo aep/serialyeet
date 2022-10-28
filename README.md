@@ -1,32 +1,34 @@
 yeet
 ====
 
-yeet a message over a socket.
-the most important feature is it does time outs correctly,
+message passing for distributed system
+
+- aggressive timeouts for liveness detection
+- zero allocations
 
 
 ### protocol
 
-| byte |                                |
-|------|--------------------------------|
-| 0    | message type  			|
-| 1    | reserved      			|
-| 2-3  | little endian content size     |
-| ..   | content     			|
+| len |                                |
+|-----|--------------------------------|
+| 4   | little endian key              |
+| 1   | ignored for future use         |
+| 1   | user flags                     |
+| 2   | little endian value size       |
+| ..  | value                          |
 
 
-### message types
+### reserved keys
 
-
-| type |                                  |
-|------|----------------------------------|
-| a-z  | optional. ignored for future use |
-| M    | msgpack content                  |
-| P    | ping                             |
-| R    | pong                             |
-| C    | close                            |
-| E    | error message                    |
-| H    | handshake (must be first message)|
+| key   |                                  |
+|-------|----------------------------------|
+| 0     | invalid                          |
+| 1     | hello							   |
+| 2     | ping                             |
+| 3     | pong                             |
+| 4     | close                            |
+| ..10  | invalid for future use           |
+| ..255 | ignored for future use           |
 
 
 

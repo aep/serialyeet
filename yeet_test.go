@@ -9,11 +9,6 @@ import (
 	"time"
 )
 
-type TestMessage struct {
-	Alice string
-	Bob   int
-}
-
 func TestYeet(t *testing.T) {
 
 	go func() {
@@ -32,7 +27,7 @@ func TestYeet(t *testing.T) {
 			panic(err)
 		}
 		go yeetA.Discard()
-		err = yeetA.Write(TestMessage{"Alice", 1})
+		err = yeetA.Write(Message{Key: 0xb0b, Value: []byte("bob"), Flags: 23})
 		if err != nil {
 			panic(err)
 		}
@@ -43,17 +38,20 @@ func TestYeet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var msg TestMessage
-	err = yeetB.Read(&msg)
+	msg, err := yeetB.Read()
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	if msg.Alice != "Alice" {
+	if string(msg.Value) != "bob" {
 		t.Error("mismatched")
 		return
 	}
-	if msg.Bob != 1 {
+	if msg.Key != 0xb0b {
+		t.Error("mismatched")
+		return
+	}
+	if msg.Flags != 23 {
 		t.Error("mismatched")
 		return
 	}
@@ -91,7 +89,7 @@ func TestReadDeadline(t *testing.T) {
 			panic(err)
 		}
 		go yeetA.Discard()
-		err = yeetA.Write(TestMessage{"Alice", 1})
+		err = yeetA.Write(Message{Key: 0xa11c3, Value: []byte("alice")})
 		if err != nil {
 			panic(err)
 		}
@@ -102,12 +100,9 @@ func TestReadDeadline(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var msg TestMessage
-
-	yeetB.Read(&msg)
-
+	yeetB.Read()
 	yeetB.SetReadDeadline(time.Now().Add(time.Millisecond * 100))
-	err = yeetB.Read(&msg)
+	_, err = yeetB.Read()
 	if !errors.Is(err, os.ErrDeadlineExceeded) {
 		t.Error("error should be a timeout")
 	}
