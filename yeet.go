@@ -101,10 +101,9 @@ func Connect(inner net.Conn, opts ...SockOpt) (*Sock, error) {
 		writeHS <- err
 	}()
 
-
 	self.inner.SetReadDeadline(time.Now().Add(self.handshakeTimeout))
 
-	for ;; {
+	for {
 
 		var header [8]byte
 		if _, err := io.ReadFull(self.inner, header[:]); err != nil {

@@ -1,12 +1,10 @@
 package yeet
 
-
 import (
+	"sync"
 	"testing"
 	"time"
-	"sync"
 )
-
 
 func TestSync(t *testing.T) {
 
@@ -15,10 +13,7 @@ func TestSync(t *testing.T) {
 	}
 }
 
-
-
 func testSync(t *testing.T) {
-
 
 	var done = false
 	go func() {

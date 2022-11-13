@@ -1,14 +1,13 @@
 package yeet
 
-
 import (
+	"io"
 	"net"
 	"sync/atomic"
-	"io"
 	"time"
 )
 
-func Sync(conn net.Conn, opts...interface{}) error {
+func Sync(conn net.Conn, opts ...interface{}) error {
 
 	var timeout = time.Second
 
@@ -19,30 +18,30 @@ func Sync(conn net.Conn, opts...interface{}) error {
 		}
 	}
 
-	var hasLocalSync	atomic.Bool
-	var hasRemoteSync	atomic.Bool
+	var hasLocalSync atomic.Bool
+	var hasRemoteSync atomic.Bool
 	defer hasRemoteSync.Store(true)
 
 	go func() {
-		for ;; {
+		for {
 			if hasRemoteSync.Load() {
 				return
 			}
 			if hasLocalSync.Load() {
-				conn.Write([]byte{22, 0, 0, 0, 26, 0, 0, 0 })
+				conn.Write([]byte{22, 0, 0, 0, 26, 0, 0, 0})
 			} else {
-				conn.Write([]byte{22, 0, 0, 0, 21, 0, 0, 0 })
+				conn.Write([]byte{22, 0, 0, 0, 21, 0, 0, 0})
 			}
-			time.Sleep(timeout/20)
+			time.Sleep(timeout / 20)
 		}
 	}()
 
 	defer func() {
-		conn.Write([]byte{22, 0, 0, 0, 26, 0, 0, 0 })
+		conn.Write([]byte{22, 0, 0, 0, 26, 0, 0, 0})
 	}()
 
 	conn.SetDeadline(time.Now().Add(timeout))
-	for ;; {
+	for {
 		var b [1]byte
 		if _, err := io.ReadFull(conn, b[:]); err != nil {
 			return err
@@ -75,7 +74,7 @@ func Sync(conn net.Conn, opts...interface{}) error {
 		if _, err := io.ReadFull(conn, b[:]); err != nil {
 			return err
 		}
-		if b[0] != 21 &&  b[0] != 26 {
+		if b[0] != 21 && b[0] != 26 {
 			continue
 		}
 
@@ -110,13 +109,12 @@ func Sync(conn net.Conn, opts...interface{}) error {
 		break
 	}
 
-
 	if hasRemoteSync.Load() {
 		return nil
 	}
 
 	// we have sync now. can receive 8 byte chunks
-	for ;; {
+	for {
 		var b [8]byte
 		if _, err := io.ReadFull(conn, b[:]); err != nil {
 			return err
