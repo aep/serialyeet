@@ -40,6 +40,7 @@ const KEY_RESERVED_HELLO = 1
 const KEY_RESERVED_PING = 2
 const KEY_RESERVED_PONG = 3
 const KEY_RESERVED_CLOSE = 4
+const KEY_RESERVED_SYNC = 26
 
 type Message struct {
 	Key   uint32
@@ -100,28 +101,34 @@ func Connect(inner net.Conn, opts ...SockOpt) (*Sock, error) {
 		writeHS <- err
 	}()
 
-	var header = make([]byte, 8)
+
 	self.inner.SetReadDeadline(time.Now().Add(self.handshakeTimeout))
-	if _, err := io.ReadFull(self.inner, header); err != nil {
-		return nil, fmt.Errorf("handshake failed: %w", err)
-	}
 
-	if header[0] != KEY_RESERVED_HELLO {
-		return nil, fmt.Errorf("invalid handshake response %q", header)
-	}
-	if header[4] != 1 {
-		return nil, fmt.Errorf("invalid handshake version %d", header[4])
-	}
+	for ;; {
 
-	var l = binary.LittleEndian.Uint16(header[6:8])
-	self.rbuf.Reset()
-	self.rbuf.Grow(int(l))
-	self.inner.SetReadDeadline(time.Now().Add(self.handshakeTimeout))
-	if _, err := io.ReadFull(self.inner, self.rbuf.Bytes()[:l]); err != nil {
-		return nil, fmt.Errorf("handshake failed: %w", err)
-	}
+		var header [8]byte
+		if _, err := io.ReadFull(self.inner, header[:]); err != nil {
+			return nil, fmt.Errorf("handshake failed: %w", err)
+		}
 
-	self.remoteHello = string(self.rbuf.Bytes()[:l])
+		var l = binary.LittleEndian.Uint16(header[6:8])
+		self.rbuf.Reset()
+		self.rbuf.Grow(int(l))
+		self.inner.SetReadDeadline(time.Now().Add(self.handshakeTimeout))
+		if _, err := io.ReadFull(self.inner, self.rbuf.Bytes()[:l]); err != nil {
+			return nil, fmt.Errorf("handshake failed: %w", err)
+		}
+
+		if header[0] != KEY_RESERVED_HELLO {
+			continue
+		}
+		if header[4] != 1 {
+			return nil, fmt.Errorf("invalid handshake version %d", header[4])
+		}
+
+		self.remoteHello = string(self.rbuf.Bytes()[:l])
+		break
+	}
 
 	err := <-writeHS
 	if err != nil {
@@ -271,6 +278,8 @@ func (self *Sock) Read() (rr Message, err error) {
 			} else {
 				return rr, fmt.Errorf("remote closed connection (%w)", io.EOF)
 			}
+		case KEY_RESERVED_HELLO:
+		case KEY_RESERVED_SYNC:
 		default:
 			if key < 10 {
 				return rr, fmt.Errorf("unsupported required reserved key %d", key)

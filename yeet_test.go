@@ -114,6 +114,7 @@ func pipe() (net.Conn, net.Conn) {
 	if err != nil {
 		panic(err)
 	}
+	defer l.Close()
 
 	conA := make(chan net.Conn)
 
